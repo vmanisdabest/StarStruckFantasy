@@ -168,79 +168,7 @@ def SetOff():
             OFFY -= abs(round(screen.get_height()/2)-Y)
         elif Y < round(screen.get_height()/2):
             OFFY += abs(Y-round(screen.get_height()/2))
-def PlaceCube(PX = 0, PY = 0, PZ = 0, TYP = 0, COL = 0, IMG = None, SURF = "WORK", REC = False, RETR = False):
-    global COLOR
-    global BASE
-    global SW
-    global SH
-    global SCALE
-    global GRID
-    global OFFX
-    global OFFY
-    global X
-    global Y
-    if REC:
-        try:
-            GRID[PY+100][PX+100][PZ+100] = [TYP, COL]
-        except:
-            pass
-    #OG
-    X = (SW/2) + ((PX+PZ)*(14*SCALE)) - PZ*(29*SCALE) + PZ*(3*SCALE) + OFFX
-    Y = (SH/2) + ((PX+PZ)*(7*SCALE)) - PY*(9*SCALE) + PZ*(-1*SCALE) + OFFY
-    #9 in PY*() was originally 18
-    X = round(X)
-    Y = round(Y)
-    if RETR:
-        return X, Y
-    else:
-        try:
-            if IMG != None:
-                exec(SURF + ".blit(" + IMG + ", [X, Y])", globals())
-            else:
-                exec(SURF + ".blit(" + BASE[TYP] + COLOR[COL] + ", [X, Y])", globals())
-        except:
-            print(TYP, COL)
-def RendMap(SEED = None, TN = 0, LVS = 20):
-    global GRID
-    if SEED == None:
-        SEED = random.randint(1, 99999999)
-    GRID = []
-    PLT = []
-    ROW = []
-    for I in range(200):
-        ROW.append([None])
-    for I in range(200):
-        PLT.append(ROW.copy())
-    ROW = []
-    for I in range(200):
-        GRID.append(PLT.copy())
-    print(GRID[0][0][0])
-    PLT = []
-    noise1 = PerlinNoise(octaves=3, seed=SEED+TN+3)
-    noise2 = PerlinNoise(octaves=6, seed=SEED+TN+3)
-    noise3 = PerlinNoise(octaves=12, seed=SEED+TN+3)
-    noise4 = PerlinNoise(octaves=24, seed=SEED+TN+3)
-    noise5 = PerlinNoise(octaves=48, seed=SEED+TN+3)
-    noise6 = PerlinNoise(octaves=96, seed=SEED+TN+3)
-    for X in range(200):
-        for Z in range(200):
-            NVAL = noise1([X/200, Y/200])
-            NVAL += 0.5 * noise2([X/200, Y/200])
-            NVAL += 0.25 * noise3([X/200, Y/200])
-            NVAL += 0.125 * noise4([X/200, Y/200])
-            NVAL += 0.0625 * noise5([X/200, Y/200])
-            NVAL += 0.03125 * noise5([X/200, Y/200])
-            NVAL = abs(NVAL)
-            NVAL = round(LVS*NVAL)
-            GRID[X][NVAL+95][Z] = [29, 0]
-            for I in range(NVAL+95):
-                if I == NVAL+94:
-                    GRID[X][I][Z] = [29, 0]
-                else:
-                    GRID[X][I][Z] = [0, random.randint(0, 20)]
-        pygame.event.get()
-            
-    
+             
 def NameGen(lengmin = 4, lengmax = 7, area = None, The = None, Type = 1):
     if Type == 1:
         AREA = ["City State Of ", "Nation Of ", "Republic Of ", "Democracy Of ", "Kingdom Of ", "Empire Of ", "Union Of ", "Confederacy Of ",
@@ -309,6 +237,7 @@ def CALENDAR():
         DMINUTE = "0" + str(MINUTE)
     else:
         DMINUTE = MINUTE
+
 class GIF():
     def __init__(self, FILE, SCALE = 1, SUB = None):
         img = Image.open(FILE)
@@ -318,28 +247,31 @@ class GIF():
             self.SUB = [round(SUB[0]*SCALE), round(SUB[1]*SCALE)]
         self.SCALE = SCALE
         self.FRM = 0
+        self.FRMS = []
         while RUN:
             try:
                 img.seek(I)
                 img.convert("RGBA")
                 img.save('RAM.png')
-                exec("self.FRM" + str(I) + " = pygame.image.load('RAM.png').convert_alpha()")
-                if SCALE != 1:
-                    exec("self.FRM" + str(I) + " = pygame.transform.scale(self.FRM" + str(I) + ", [round(self.FRM" + str(I) + ".get_width()*SCALE), round(self.FRM" + str(I) + ".get_height()*SCALE)])")
+                EDI = pygame.image.load('RAM.png').convert_alpha()
+                self.FRMS.append("")
+                self.FRMS[I] = pygame.transform.scale(EDI, [EDI.get_width()*SCALE, EDI.get_height()*SCALE]).copy()
                 I += 1
-            except:
+            except Exception as E:
+                #print(E)
                 RUN = False
                 self.MFRM = I-1
     def reset(self):
         self.FRM = 0
     def get(self, FRM = None, CORD = None, SUB = None):
+        global PSCALE
         if FRM != None:
             exec("self.DATA = self.FRM" + str(FRM) + ".copy()")
         else:
             self.FRM += 1
             if self.FRM > self.MFRM:
                 self.FRM = 0
-            exec("self.DATA = self.FRM" + str(self.FRM) + ".copy()")
+            self.DATA = self.FRMS[self.FRM]
         if SUB != None:
             SUB[0][0] = round(SUB[0][0] * self.SCALE)
             SUB[0][1] = round(SUB[0][1] * self.SCALE)
@@ -351,120 +283,176 @@ class GIF():
             CORD[0] = round(CORD[0] * self.SCALE)
             CORD[1] = round(CORD[1] * self.SCALE)
             self.DATA = pygame.Surface.subsurface(self.DATA, (CORD, self.SUB))
+        self.DATA = pygame.transform.scale(self.DATA, [self.DATA.get_width()*PSCALE, self.DATA.get_height()*PSCALE])
         return self.DATA
-def TEST():
-    global GRID
+    
+def PlaceCube(x = 0, y = 0, z = 0, blk = 0, init = False):
     global OFFX
     global OFFY
-    global WORK
-    global COLOR
-    global WLK
-    OFFY = -3760
-    OFFX = 1840
-    UPDATE = True
-    REN = 10
-    POS = [0,0,0]
-    WLK = GIF("SSF-WALK.gif", 2, [60, 100])
+    global SCALE
+    global X
+    global Y
+    global BLOCKS
+    if init:
+        OFFX = round(screen.get_width()/2-15.5)
+        OFFY = round(screen.get_height()/2-16.5)
+    else:
+        X = (-x*(14*SCALE)) + (z*(14*SCALE)) + OFFX
+        Y = (x*(7*SCALE)) + (-y*(18*SCALE)) + (z*(7*SCALE)) + OFFY
+        screen.blit(BLOCKS[blk], [X, Y])
+        #pygame.event.get()
+        #pygame.display.update()
+
+def RendMap(SEED = None, TN = 0, LVS = 20):
+    global GRID
+    if SEED == None:
+        SEED = random.randint(1, 99999999)
+    GRID = []
+    PLT = []
+    ROW = []
+    for I in range(200):
+        ROW.append(None)
+    for I in range(200):
+        PLT.append(ROW.copy())
+    ROW = []
+    for I in range(200):
+        GRID.append(PLT.copy())
+    PLT = []
+    noise1 = PerlinNoise(octaves=3, seed=SEED+TN+3)
+    noise2 = PerlinNoise(octaves=6, seed=SEED+TN+3)
+    noise3 = PerlinNoise(octaves=12, seed=SEED+TN+3)
+    noise4 = PerlinNoise(octaves=24, seed=SEED+TN+3)
+    noise5 = PerlinNoise(octaves=48, seed=SEED+TN+3)
+    noise6 = PerlinNoise(octaves=96, seed=SEED+TN+3)
+    for X in range(200):
+        for Z in range(200):
+            NVAL = noise1([X/200, Y/200])
+            NVAL += 0.5 * noise2([X/200, Y/200])
+            NVAL += 0.25 * noise3([X/200, Y/200])
+            NVAL += 0.125 * noise4([X/200, Y/200])
+            NVAL += 0.0625 * noise5([X/200, Y/200])
+            NVAL += 0.03125 * noise5([X/200, Y/200])
+            NVAL = abs(NVAL)
+            NVAL = round(LVS*NVAL)
+            for I in range(NVAL+95):
+                if I == NVAL+94:
+                    GRID[X][I][Z] = 1
+                else:
+                    GRID[X][I][Z] = 0
+        pygame.event.get()
+
+#import pygame
+#import os
+#import random
+#import time
+#import math
+#import ctypes
+#from perlin_noise import PerlinNoise
+#from PIL import Image
+#pygame.init()
+#user32 = ctypes.windll.user32
+#user32.SetProcessDPIAware()
+def NewRenderer():
+    SCALE = 1
+    PSCALE = 1
+    OFFX = 0
+    OFFY = 0
+    X = 0
+    Y = 0
+
+    display_screen = pygame.display.set_mode((900, 900), pygame.RESIZABLE)
+    screen = pygame.Surface([900, 900])
+    mshade = pygame.Surface([screen.get_width(), screen.get_height()])
+    mshade = mshade.convert_alpha()
+    mshade.fill((0,0,0,6))
+    lshade = pygame.Surface([screen.get_width(), screen.get_height()])
+    lshade = lshade.convert_alpha()
+    lshade.fill((0,0,0,15))
+    nshade = pygame.Surface([screen.get_width(), screen.get_height()])
+    nshade = nshade.convert_alpha()
+    nshade.fill((0,0,0,40))
+
+    PALLET = ["SELC", "GRASS", "WATER"]
+    BLOCKS = []
+    for I in range(len(PALLET)):
+        EDI = pygame.image.load("SSF-" + PALLET[I] + ".png").convert_alpha()
+        BLOCKS.append("")
+        BLOCKS[I] = pygame.transform.scale(EDI, [EDI.get_width()*SCALE, EDI.get_height()*SCALE])
+
+    WLK = GIF("SSF-WALK.gif", PSCALE, [60, 100])
+    CRD = [[135, 8], [353, 8], [23, 8], [245, 8], [408, 8], [79, 8], [301, 8], [190, 8]]
+    FRM = WLK.get(CORD = CRD[0])
     DIR = 0
-    TFRM = 50
-    WALK = True
-    CORDS = [[135, 8], [353, 8], [23, 8], [245, 8], [408, 8], [79, 8], [301, 8], [190, 8]]
-    WORK = pygame.Surface([screen.get_width(), screen.get_height()])
-    SetOff()
+    POS = [0,0,0]
+    TFRM = 0
+    REN = 20
+    YREN = 10
     RendMap()
-    SHX = 0
-    SHY = 0
-    NPCS = [0]
-    NPCS[0] = NPC() 
-    while True:
+    RUN = True
+    PlaceCube(init=True)
+    while RUN:
         screen.fill([0,0,0])
+        for y in range(YREN):
+            if round(POS[1]-YREN/4)+y < POS[1]:
+                screen.blit(nshade, [0,0])
+            DPOS = [POS[0]-REN+100, POS[1]-YREN/4+100, POS[2]-REN+100]
+            for z in range(REN):
+                for x in range(REN):
+                    MAT = GRID[round(DPOS[0]+(-REN/2)+x)][round(DPOS[1]+(YREN/4)+y)][round(DPOS[2]+(-REN/2)+z)]
+                    if MAT != None:
+                        PlaceCube(round(-REN/2)+x, round(YREN/4)+y, round(-REN/2)+z, MAT)
+                    #time.sleep(0.05)
+                    #pygame.display.update()
+                    #pygame.event.get()
         if TFRM >= 10 and WALK:
             TFRM = 0
-            FRM = WLK.get(CORD = CORDS[DIR])
+            FRM = WLK.get(CORD = CRD[DIR])
         else:
             TFRM += 1
-        if UPDATE:
-            UPDATE = False
-            WORK.fill([0,0,0])
-            NPCP = []
-            for I in range(len(NPCS)):
-                NPCP.append(NPCS[I].get_pos())
-            for DX in range(REN):
-                for DZ in range(REN):
-                    for DY in range(round(REN/2)+20):
-                        LK = round((POS[0]-REN/2)+DX)+100, round((POS[1]-REN/2)+DY)+100, round((POS[2]-REN/2)+DZ)+100
-                        DT = GRID[LK[0]][LK[1]][LK[2]]
-                        for I in range(len(NPCP)):
-                            if LK == NPCP[I]:
-                                NPCS[I].display([round(DX-REN/2), round(DY-REN/4), round(DZ-REN/2)])
-                        if DT != [None]:
-                            PlaceCube(round(DX-REN/2), round(DY-REN/4), round(DZ-REN/2), DT[0], DT[1], SURF = "WORK", REC = False)
-        screen.blit(WORK, [SHX,SHY])
         screen.blit(FRM, [screen.get_width()/2-FRM.get_width()/2, screen.get_height()/2-FRM.get_height()/2])
-        TXT = MFONT.render(str(POS), False, [117, 0, 0])
-        screen.blit(TXT, [4, 11])
+        if display_screen.get_width() > display_screen.get_height():
+            SCL = int(display_screen.get_height()/900)
+        else:
+            SCL = int(display_screen.get_width()/900)
+        EDI = pygame.transform.scale(screen, [SCL, SCL])
+        display_screen.blit(screen, [display_screen.get_width()/2-EDI.get_width()/2, display_screen.get_height()/2-EDI.get_height/2])
         pygame.event.get()
         pygame.display.update()
         keys = pygame.key.get_pressed()
         WALK = True
-        OPOS = POS.copy()
-        OPOS[0] = round(OPOS[0])
-        OPOS[2] = round(OPOS[2])
-        if keys[pygame.K_u]:
-            OFFY -= 10
-        elif keys[pygame.K_j]:
-            OFFY += 10
-        elif keys[pygame.K_h]:
-            OFFX -= 10
-        elif keys[pygame.K_k]:
-            OFFX += 10
-        elif keys[pygame.K_e]:
-            POS[1] -= 1
-            time.sleep(0.1)
-        elif keys[pygame.K_q]:
-            POS[1] += 1
-            time.sleep(0.1)
-        elif keys[pygame.K_d] and keys[pygame.K_w]:
+        if keys[pygame.K_d] and keys[pygame.K_w]:
             DIR = 6
-            POS[2] -= 0.005
-            POS[0] += 0.005
+            POS[2] -= 1
+            POS[0] += 1
         elif keys[pygame.K_d] and keys[pygame.K_s]:
             DIR = 7
-            POS[2] += 0.005
-            POS[0] += 0.005
+            POS[2] += 1
+            POS[0] += 1
         elif keys[pygame.K_a] and keys[pygame.K_w]:
             DIR = 4
-            POS[2] -= 0.005
-            POS[0] -= 0.005
+            POS[2] -= 1
+            POS[0] -= 1
         elif keys[pygame.K_a] and keys[pygame.K_s]:
             DIR = 5
-            POS[2] += 0.005
-            POS[0] -= 0.005
+            POS[2] += 1
+            POS[0] -= 1
         elif keys[pygame.K_w]:
             DIR = 1
-            POS[2] -= 0.01
+            POS[2] -= 1
         elif keys[pygame.K_s]:
             DIR = 0
-            POS[2] += 0.01
+            POS[2] += 1
         elif keys[pygame.K_a]:
             DIR = 2
-            POS[0] -= 0.01
+            POS[0] -= 1
         elif keys[pygame.K_d]:
             DIR = 3
-            POS[0] += 0.01
+            POS[0] += 1
         else:
             WALK = False
             WLK.reset()
-            FRM = WLK.get(CORD = CORDS[DIR])
-            UPDATE = False
-        NPOS = POS.copy()
-        NPOS[0] = round(NPOS[0])
-        NPOS[2] = round(NPOS[2])
-        if NPOS != OPOS:
-            UPDATE = True
-            SetOff()
-        pygame.event.get()
-        time.sleep(0.01)
+            FRM = WLK.get(CORD = CRD[DIR])
+    
 import pygame
 import os
 import random
@@ -555,241 +543,6 @@ BX, BY = X, Y
 TXT = MFONT.render("Loading...", False, [200, 100, 33])
 screen.blit(TXT, [4, screen.get_height()-TXT.get_height()])
 pygame.display.update()
-#WORK.fill([255, 255, 255])
-
-FILES = ["CUBE.png", "CHAR.png", "UCHR.png", "USLB.png", "SLAB.png", "LSLB.png", "NAT1.png", "NAT2.png", "NAT3.png",
-         "GLAS.png", "RAMP.png", "RMP1.png", "RMp2.png", "LRMP.png", "LRM1.png", "LRM2.png", "CORN.png", "CRN1.png",
-         "DOTE.png", "COLC.png", "TORC.png", "PILL.png", "SELC.png", "QBRT.png", "QBT1.png", "QBT2.png", "QBT3.png",
-         "Torso.png", "Head.png", "GRASS.png", "CHR1.png", "CHAI.png", "CHA1.png", "CHA2.png", "CHA3.png", "BRIK.png",
-         "BRK1.png", "GCHA.png", "GCH1.png", "GCH2.png", "GCH3.png", "LAMP.png", "TRAM1.png", "TRAM2.png", "WATR.png"]
-#           1       2       3      4       5       6       7       8       9       10      11      12      13 
-NAMES = ['CUBE', 'DCHR', 'UCHR', 'USLB', 'SLAB', 'LSLB', 'NAT1', 'NAT2', 'NAT3', 'GLAS', 'RAMP', 'RAM1', 'RAM2',
-         'LRAM', 'LRM1', 'LRM2', 'CORN', 'CRN1', 'DOTE', 'COLC', 'TORC', 'PILL', 'SELC', 'QBRT', 'QBT1', 'QBT2',
-         'QBT3', 'TORS', 'HEAD', 'GRAS', 'CHR1', "CHAI", "CHA1", "CHA2", "CHA3", "BRIK", "BRK1", "GCHA", "GCH1",
-         "GCH2", "GCH3", "LAMP", "TRAM1", "TRAM2", "WATR"]
-SCALE = 4
-PIK = random.randint(1, 3)
-for I in range(len(FILES)):
-    screen.fill([0,0,0])
-    if PIK == 1:
-        screen.blit(LBKG1, [BX, BY])
-    elif PIK == 2:
-        screen.blit(LBKG2, [BX, BY])
-    else:
-        screen.blit(LBKG3, [BX, BY])
-    TXT = MFONT.render("Loading... Textures [" + str(I+1) + "/" + str(len(FILES)) + "]", False, [117, 0, 0])
-    screen.blit(TXT, [4, screen.get_height()-TXT.get_height()])
-    pygame.display.update()
-    pygame.event.get()
-    time.sleep(0.11)
-    exec(str(NAMES[I]) + " = pygame.image.load('" + str(FILES[I]) + "').convert_alpha()", globals())
-    exec(str(NAMES[I]) + " = pygame.transform.scale(" + str(NAMES[I]) + ", [" + str(NAMES[I]) + ".get_width()*SCALE, " + str(NAMES[I]) + ".get_height()*SCALE])", globals())
-X = 0
-Y = 0
-BASE = ["CUBE", "DCHR", "UCHR", "USLB", "SLAB", "LSLB", "NAT1", "NAT2", "NAT3", "GLAS", "RAMP", "RAM1", "RAM2", "LRAM", "LRM1", "LRM2", "CORN",
-        "CRN1", "DOTE", "COLC", "TORC", "PILL", "QBRT", "QBT1", "QBT2", "QBT3", "HEAD", "TORS", "CHR1", "GRAS", "CHAI", "CHA1", "CHA2",
-        "CHA3", "BRIK", "BRK1", "GCHA", "GCH1", "GCH2", "GCH3", "LAMP", "TRAM1", "TRAM2", "WATR"]
-
-COLOR = ["WHT", "RED", "RD1", "RD2", "RD3", "RD4", "RD5", "RD6", "RD7", "RD8", "GRN", "GR1", "GR2", "GR3", "GR4", "GR5", "GR6", "GR7", "GR8", "BLU",
-         "BL1", "BL2", "BL3", "BL4", "BL5", "BL6", "BL7", "BL8", "YEL", "MAG", "CYN", "BRW", "DBR", "BLK", "GY0", "GY1", "GY2", "GY3",
-         "GY4", "GY5", "GY6", "GY7", "GY8", "GL1", "GL2", "GL3", "GL4", "GL5", "GL6", "GL7", "GL8", "GL9", "GL0", "GLS", "BBR"]
-LONG = False
-LRG = " 0 1 2 3 4 5 9 10 11 12 13 14 15 16"
-PIK = random.randint(1, 3)
-for I in range(len(BASE)):
-    screen.fill([0,0,0])
-    if PIK == 1:
-        screen.blit(LBKG1, [BX, BY])
-    elif PIK == 2:
-        screen.blit(LBKG2, [BX, BY])
-    else:
-        screen.blit(LBKG3, [BX, BY])
-    TXT = MFONT.render("Loading... Dyeing Blocks [" + str(I+1) + "/" + str(len(BASE)) + "]", False, [117, 0, 0])
-    screen.blit(TXT, [4, screen.get_height()-TXT.get_height()])
-    pygame.display.update()
-    pygame.event.get()
-    if " " + str(I) + " " in LRG:
-        if LONG:
-            exec(BASE[I] + "RED = change(" + BASE[I] + ", [1, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD1 = change(" + BASE[I] + ", [0.9, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD2 = change(" + BASE[I] + ", [0.8, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD3 = change(" + BASE[I] + ", [0.7, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD4 = change(" + BASE[I] + ", [0.6, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD5 = change(" + BASE[I] + ", [0.5, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD6 = change(" + BASE[I] + ", [0.4, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD7 = change(" + BASE[I] + ", [0.3, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "RD8 = change(" + BASE[I] + ", [0.2, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "GRN = change(" + BASE[I] + ", [0.1, 1, 0.1, 1])", globals())
-            exec(BASE[I] + "GR1 = change(" + BASE[I] + ", [0.1, 0.9, 0.1, 1])", globals())
-            exec(BASE[I] + "GR2 = change(" + BASE[I] + ", [0.1, 0.8, 0.1, 1])", globals())
-            exec(BASE[I] + "GR3 = change(" + BASE[I] + ", [0.1, 0.7, 0.1, 1])", globals())
-            exec(BASE[I] + "GR4 = change(" + BASE[I] + ", [0.1, 0.6, 0.1, 1])", globals())
-            exec(BASE[I] + "GR5 = change(" + BASE[I] + ", [0.1, 0.5, 0.1, 1])", globals())
-            exec(BASE[I] + "GR6 = change(" + BASE[I] + ", [0.1, 0.4, 0.1, 1])", globals())
-            exec(BASE[I] + "GR7 = change(" + BASE[I] + ", [0.1, 0.3, 0.1, 1])", globals())
-            exec(BASE[I] + "GR8 = change(" + BASE[I] + ", [0.1, 0.2, 0.1, 1])", globals())
-            exec(BASE[I] + "BLU = change(" + BASE[I] + ", [0.1, 0.1, 1, 1])", globals())
-            exec(BASE[I] + "BL1 = change(" + BASE[I] + ", [0.1, 0.1, 0.9, 1])", globals())
-            exec(BASE[I] + "BL2 = change(" + BASE[I] + ", [0.1, 0.1, 0.8, 1])", globals())
-            exec(BASE[I] + "BL3 = change(" + BASE[I] + ", [0.1, 0.1, 0.7, 1])", globals())
-            exec(BASE[I] + "BL4 = change(" + BASE[I] + ", [0.1, 0.1, 0.6, 1])", globals())
-            exec(BASE[I] + "BL5 = change(" + BASE[I] + ", [0.1, 0.1, 0.5, 1])", globals())
-            exec(BASE[I] + "BL6 = change(" + BASE[I] + ", [0.1, 0.1, 0.4, 1])", globals())
-            exec(BASE[I] + "BL7 = change(" + BASE[I] + ", [0.1, 0.1, 0.3, 1])", globals())
-            exec(BASE[I] + "BL8 = change(" + BASE[I] + ", [0.1, 0.1, 0.2, 1])", globals())
-            exec(BASE[I] + "YEL = change(" + BASE[I] + ", [1, 1, 0.1, 1])", globals())
-            exec(BASE[I] + "MAG = change(" + BASE[I] + ", [0.6, 0.2, 0.6, 1])", globals())
-            exec(BASE[I] + "CYN = change(" + BASE[I] + ", [0.4, 1, 1, 1])", globals())
-            exec(BASE[I] + "BBR = change(" + BASE[I] + ", [0.219, 0.119, 0, 1])", globals())
-            exec(BASE[I] + "DBR = change(" + BASE[I] + ", [0.5, 0.3, 0.1, 1])", globals())
-            exec(BASE[I] + "BRW = change(" + BASE[I] + ", [0.6, 0.4, 0.2, 1])", globals())
-            exec(BASE[I] + "BLK = change(" + BASE[I] + ", [0.01, 0.01, 0.01, 1])", globals())
-            exec(BASE[I] + "GY0 = change(" + BASE[I] + ", [0.1, 0.1, 0.1, 1])", globals())
-            exec(BASE[I] + "GY1 = change(" + BASE[I] + ", [0.2, 0.2, 0.2, 1])", globals())
-            exec(BASE[I] + "GY2 = change(" + BASE[I] + ", [0.3, 0.3, 0.3, 1])", globals())
-            exec(BASE[I] + "GY3 = change(" + BASE[I] + ", [0.4, 0.4, 0.4, 1])", globals())
-            exec(BASE[I] + "GY4 = change(" + BASE[I] + ", [0.5, 0.5, 0.5, 1])", globals())
-            exec(BASE[I] + "GY5 = change(" + BASE[I] + ", [0.6, 0.6, 0.6, 1])", globals())
-            exec(BASE[I] + "GY6 = change(" + BASE[I] + ", [0.7, 0.7, 0.7, 1])", globals())
-            exec(BASE[I] + "GY7 = change(" + BASE[I] + ", [0.8, 0.8, 0.8, 1])", globals())
-            exec(BASE[I] + "GY8 = change(" + BASE[I] + ", [0.9, 0.9, 0.9, 1])", globals())
-            exec(BASE[I] + "WHT = change(" + BASE[I] + ", [1, 1, 1, 1])", globals())
-            exec(BASE[I] + "GL1 = change(" + BASE[I] + ", [1, 1, 1, 0.4])", globals())
-            exec(BASE[I] + "GL2 = change(" + BASE[I] + ", [1, 0.1, 0.1, 0.4])", globals())
-            exec(BASE[I] + "GL3 = change(" + BASE[I] + ", [0.1, 1, 0.1, 0.4])", globals())
-            exec(BASE[I] + "GL4 = change(" + BASE[I] + ", [0.1, 0.5, 0.1, 0.4])", globals())
-            exec(BASE[I] + "GL5 = change(" + BASE[I] + ", [0.1, 0.1, 1, 0.4])", globals())
-            exec(BASE[I] + "GL6 = change(" + BASE[I] + ", [1, 1, 0.1, 0.4])", globals())
-            exec(BASE[I] + "GL7 = change(" + BASE[I] + ", [0.6, 0.2, 0.6, 0.4])", globals())
-            exec(BASE[I] + "GL8 = change(" + BASE[I] + ", [0.4, 1, 1, 0.4])", globals())
-            exec(BASE[I] + "GL9 = change(" + BASE[I] + ", [0.6, 0.4, 0.2, 0.4])", globals())
-            exec(BASE[I] + "GL0 = change(" + BASE[I] + ", [0.01, 0.01, 0.01, 0.4])", globals())
-            exec(BASE[I] + "GLS = change(" + BASE[I] + ", [0.1, 0.1, 0.1, 0.4])", globals())
-        else:
-            exec("BB = change(" + BASE[I] + ", [0, 0, 0, 1], True)", globals())
-            exec("G1 = change(" + BASE[I] + ", [0.1, 0.1, 0.1, 1], True)", globals())
-            exec("G2 = change(" + BASE[I] + ", [0.2, 0.2, 0.2, 1], True)", globals())
-            exec("G3 = change(" + BASE[I] + ", [0.3, 0.3, 0.3, 1], True)", globals())
-            exec("G4 = change(" + BASE[I] + ", [0.4, 0.4, 0.4, 1], True)", globals())
-            exec("G5 = change(" + BASE[I] + ", [0.5, 0.5, 0.5, 1], True)", globals())
-            exec("G6 = change(" + BASE[I] + ", [0.6, 0.6, 0.6, 1], True)", globals())
-            exec("G7 = change(" + BASE[I] + ", [0.7, 0.7, 0.7, 1], True)", globals())
-            exec("G8 = change(" + BASE[I] + ", [0.8, 0.8, 0.8, 1], True)", globals())
-            exec("G9 = change(" + BASE[I] + ", [0.9, 0.9, 0.9, 1], True)", globals())
-            exec("WW = change(" + BASE[I] + ", [1, 1, 1, 1], True)", globals())
-            
-            exec(BASE[I] + "RED = WW", globals())
-            exec(BASE[I] + "RD1 = G9", globals())
-            exec(BASE[I] + "RD2 = G8", globals())
-            exec(BASE[I] + "RD3 = G7", globals())
-            exec(BASE[I] + "RD4 = G6", globals())
-            exec(BASE[I] + "RD5 = G5", globals())
-            exec(BASE[I] + "RD6 = G4", globals())
-            exec(BASE[I] + "RD7 = G3", globals())
-            exec(BASE[I] + "RD8 = G2", globals())
-            exec(BASE[I] + "GRN = WW", globals())
-            exec(BASE[I] + "GR1 = G9", globals())
-            exec(BASE[I] + "GR2 = G8", globals())
-            exec(BASE[I] + "GR3 = G7", globals())
-            exec(BASE[I] + "GR4 = G6", globals())
-            exec(BASE[I] + "GR5 = G5", globals())
-            exec(BASE[I] + "GR6 = G4", globals())
-            exec(BASE[I] + "GR7 = G3", globals())
-            exec(BASE[I] + "GR8 = G2", globals())
-            exec(BASE[I] + "BLU = WW", globals())
-            exec(BASE[I] + "BL1 = G9", globals())
-            exec(BASE[I] + "BL2 = G8", globals())
-            exec(BASE[I] + "BL3 = G7", globals())
-            exec(BASE[I] + "BL4 = G6", globals())
-            exec(BASE[I] + "BL5 = G5", globals())
-            exec(BASE[I] + "BL6 = G4", globals())
-            exec(BASE[I] + "BL7 = G3", globals())
-            exec(BASE[I] + "BL8 = G2", globals())
-            exec(BASE[I] + "YEL = G9", globals())
-            exec(BASE[I] + "MAG = G5", globals())
-            exec(BASE[I] + "CYN = G6", globals())
-            exec(BASE[I] + "BBR = G2", globals())
-            exec(BASE[I] + "DBR = G4", globals())
-            exec(BASE[I] + "BRW = G5", globals())
-            exec(BASE[I] + "BLK = BB", globals())
-            exec(BASE[I] + "GY0 = G1", globals())
-            exec(BASE[I] + "GY1 = G2", globals())
-            exec(BASE[I] + "GY2 = G3", globals())
-            exec(BASE[I] + "GY3 = G4", globals())
-            exec(BASE[I] + "GY4 = G5", globals())
-            exec(BASE[I] + "GY5 = G6", globals())
-            exec(BASE[I] + "GY6 = G7", globals())
-            exec(BASE[I] + "GY7 = G8", globals())
-            exec(BASE[I] + "GY8 = G9", globals())
-            exec(BASE[I] + "WHT = WW", globals())
-            exec(BASE[I] + "GL1 = G1", globals())
-            exec(BASE[I] + "GL2 = G1", globals())
-            exec(BASE[I] + "GL3 = G1", globals())
-            exec(BASE[I] + "GL4 = G1", globals())
-            exec(BASE[I] + "GL5 = G1", globals())
-            exec(BASE[I] + "GL6 = G1", globals())
-            exec(BASE[I] + "GL7 = G1", globals())
-            exec(BASE[I] + "GL8 = G1", globals())
-            exec(BASE[I] + "GL9 = G1", globals())
-            exec(BASE[I] + "GL0 = G1", globals())
-            exec(BASE[I] + "GLS = G1", globals())
-    else:
-        exec(BASE[I] + "RED = " + BASE[I], globals())
-        exec(BASE[I] + "RD1 = " + BASE[I], globals())
-        exec(BASE[I] + "RD2 = " + BASE[I], globals())
-        exec(BASE[I] + "RD3 = " + BASE[I], globals())
-        exec(BASE[I] + "RD4 = " + BASE[I], globals())
-        exec(BASE[I] + "RD5 = " + BASE[I], globals())
-        exec(BASE[I] + "RD6 = " + BASE[I], globals())
-        exec(BASE[I] + "RD7 = " + BASE[I], globals())
-        exec(BASE[I] + "RD8 = " + BASE[I], globals())
-        exec(BASE[I] + "GRN = " + BASE[I], globals())
-        exec(BASE[I] + "GR1 = " + BASE[I], globals())
-        exec(BASE[I] + "GR2 = " + BASE[I], globals())
-        exec(BASE[I] + "GR3 = " + BASE[I], globals())
-        exec(BASE[I] + "GR4 = " + BASE[I], globals())
-        exec(BASE[I] + "GR5 = " + BASE[I], globals())
-        exec(BASE[I] + "GR6 = " + BASE[I], globals())
-        exec(BASE[I] + "GR7 = " + BASE[I], globals())
-        exec(BASE[I] + "GR8 = " + BASE[I], globals())
-        exec(BASE[I] + "BLU = " + BASE[I], globals())
-        exec(BASE[I] + "BL1 = " + BASE[I], globals())
-        exec(BASE[I] + "BL2 = " + BASE[I], globals())
-        exec(BASE[I] + "BL3 = " + BASE[I], globals())
-        exec(BASE[I] + "BL4 = " + BASE[I], globals())
-        exec(BASE[I] + "BL5 = " + BASE[I], globals())
-        exec(BASE[I] + "BL6 = " + BASE[I], globals())
-        exec(BASE[I] + "BL7 = " + BASE[I], globals())
-        exec(BASE[I] + "BL8 = " + BASE[I], globals())
-        exec(BASE[I] + "YEL = " + BASE[I], globals())
-        exec(BASE[I] + "MAG = " + BASE[I], globals())
-        exec(BASE[I] + "CYN = " + BASE[I], globals())
-        exec(BASE[I] + "BBR = " + BASE[I], globals())
-        exec(BASE[I] + "DBR = " + BASE[I], globals())
-        exec(BASE[I] + "BRW = " + BASE[I], globals())
-        exec(BASE[I] + "BLK = " + BASE[I], globals())
-        exec(BASE[I] + "GY0 = " + BASE[I], globals())
-        exec(BASE[I] + "GY1 = " + BASE[I], globals())
-        exec(BASE[I] + "GY2 = " + BASE[I], globals())
-        exec(BASE[I] + "GY3 = " + BASE[I], globals())
-        exec(BASE[I] + "GY4 = " + BASE[I], globals())
-        exec(BASE[I] + "GY5 = " + BASE[I], globals())
-        exec(BASE[I] + "GY6 = " + BASE[I], globals())
-        exec(BASE[I] + "GY7 = " + BASE[I], globals())
-        exec(BASE[I] + "GY8 = " + BASE[I], globals())
-        exec(BASE[I] + "WHT = " + BASE[I], globals())
-        exec(BASE[I] + "GL1 = " + BASE[I], globals())
-        exec(BASE[I] + "GL2 = " + BASE[I], globals())
-        exec(BASE[I] + "GL3 = " + BASE[I], globals())
-        exec(BASE[I] + "GL4 = " + BASE[I], globals())
-        exec(BASE[I] + "GL5 = " + BASE[I], globals())
-        exec(BASE[I] + "GL6 = " + BASE[I], globals())
-        exec(BASE[I] + "GL7 = " + BASE[I], globals())
-        exec(BASE[I] + "GL8 = " + BASE[I], globals())
-        exec(BASE[I] + "GL9 = " + BASE[I], globals())
-        exec(BASE[I] + "GL0 = " + BASE[I], globals())
-        exec(BASE[I] + "GLS = " + BASE[I], globals())       
-TEST()
 SEED = random.randint(1, 9999999)
 LAND = [[28,61,87], [39,102,150], [58,150,221], [196,164,120], [123,149,60], [123,149,60], [80,112,3], [80,112,3], [36,72,12], [82,82,82],
         [90,90,90], [104,104,104], [104,104,104], [205,205,205], [205,205,205]]
@@ -1059,51 +812,7 @@ while not keys[pygame.K_RETURN]:
     pygame.event.get()
     pygame.display.update()
     time.sleep(0.011)
-time.sleep(2)
+NewRenderer()
 #    0           1           2         3     4-5      6-7      8-9          10-12    13-14
 #Deep-Ocean Medium-Ocean Coast-Ocean Beach Medows    Plains  Foothills   Mountains   Peaks
 #RendMap(SEED)
-TEST()
-while True:
-    screen.fill([0,0,0])
-    
-    if keys[pygame.K_a]:
-        if MODE == 1:
-            PPOS[2] += 1
-        else:
-            time.sleep(0.1)
-        SLC[2] += 1
-        CXY = PlaceCube(PPOS[0], PPOS[1], PPOS[2], REC = False, RETR = True)
-        OFFX = screen.get_width()/2-CXY[0]
-        OFFY = screen.get_height()/2-CXY[1]
-        PUPD = True
-    elif keys[pygame.K_w]:
-        if MODE == 1:
-            PPOS[2] -= 1
-        else:
-            time.sleep(0.1)
-        SLC[2] -= 1
-        CXY = PlaceCube(PPOS[0], PPOS[1], PPOS[2], REC = False, RETR = True)
-        OFFX = screen.get_width()/2-CXY[0]
-        OFFY = screen.get_height()/2-CXY[1]
-        PUPD = True
-    if keys[pygame.K_s]:
-        if MODE == 1:
-            PPOS[0] += 1
-        else:
-            time.sleep(0.1)
-        SLC[0] += 1
-        CXY = PlaceCube(PPOS[0], PPOS[1], PPOS[2], REC = False, RETR = True)
-        OFFX = screen.get_width()/2-CXY[0]
-        OFFY = screen.get_height()/2-CXY[1]
-        PUPD = True
-    elif keys[pygame.K_q]:
-        if MODE == 1:
-            PPOS[0] -= 1
-        else:
-            time.sleep(0.1)
-        SLC[0] -= 1
-        CXY = PlaceCube(PPOS[0], PPOS[1], PPOS[2], REC = False, RETR = True)
-        OFFX = screen.get_width()/2-CXY[0]
-        OFFY = screen.get_height()/2-CXY[1]
-        PUPD = True
